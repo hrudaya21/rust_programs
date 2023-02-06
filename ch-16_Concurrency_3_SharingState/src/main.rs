@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::rc::Rc;
 
@@ -11,19 +11,26 @@ fn basic_mutex_check() {
     }
     println!("m = {:?}", m);
 }
-fn main() {
-    // basic_mutex_check();
-    let counter = Rc::new(Mutex::new(0));
+fn share_state() {
+    // In Multi threaded reference counting, Arc smart pointer to be used.
+    // Rc smart pointer can be used in single threaded scenario
+    let counter = Arc::new(Mutex::new(0));
     let mut thread_handles = vec![];
     for _ in 0..10 {
-        let counter = Rc::clone(&counter);
+        let counter = Arc::clone(&counter);
         let thread_handle = thread::spawn(move || {
             let mut num = counter.lock().unwrap();
             *num += 1;
         });
         thread_handles.push(thread_handle);
     }
+    
     for handle in thread_handles {
-        handle.join();
+        handle.join().unwrap();
     }
+    println!("Value: {}", *counter.lock().unwrap());
+}
+fn main() {
+    // basic_mutex_check();
+    share_state();
 }
